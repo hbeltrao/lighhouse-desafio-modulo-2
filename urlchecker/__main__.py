@@ -2,7 +2,13 @@ import sys
 import pathlib
 import asyncio
 
-from urlchecker.cli import read_user_cli_args, display_check_result
+import time
+import datetime
+
+import csv
+
+
+from urlchecker.cli import read_user_cli_args, display_check_result, store_check_result
 from urlchecker.checker import connectivity_checker, async_connectivity_checker
 
 
@@ -42,9 +48,12 @@ def _read_urls_from_file(file):
 
 def _synchronous_check(urls):
 
+    check_result = []
+
     for url in urls:
 
         error = ""
+
 
         try:
 
@@ -56,6 +65,10 @@ def _synchronous_check(urls):
             error = str(e)
 
         display_check_result(result,url, error)
+
+        check_result.append(store_check_result(result,url, error))
+    
+    return check_result
 
 
 async def _asynchronous_check(urls):
@@ -84,6 +97,8 @@ def main():
 
     urls = _get_websites_urls(user_args)
 
+    timestamp = str(datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S'))
+
     if not urls:
 
         print("Error: No URLs to check", file=sys.stderr)
@@ -95,8 +110,18 @@ def main():
     
     else:
 
-        _synchronous_check(urls)
+        check_results = _synchronous_check(urls)
 
+    if user_args.save_result:
+
+        with open("results/"+timestamp+".csv", "a") as file:   
+            #configure writer to write standard csv file
+            writer = csv.writer(file, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+            writer.writerow(['timestamp', 'URL', 'result', 'error'])
+            for item in check_results:
+                #Write item to file
+                writer.writerow([item[0], item[1], item[2], item[3]])
+    
 
 
 if __name__ == "__main__":

@@ -1,4 +1,8 @@
 import argparse
+from os import times
+
+import time
+import datetime
 
 def read_user_cli_args():
     """
@@ -35,6 +39,13 @@ def read_user_cli_args():
         help="run the connectivity check asynchronously"
     )
 
+    parser.add_argument(
+        "-s",
+        "--save_result",
+        action="store_true",
+        help="save the result in a csv file"
+    )
+
     return parser.parse_args()
 
 
@@ -51,4 +62,13 @@ def display_check_result(result, url, error=""):
         
     else:
         print(f'"Offline?" 👎 \n  Error: "{error}"')
+
+def store_check_result(result, url, error=""):
+
+    timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+
+    result = [timestamp, url, result, error]
+
+    return result
+
 
